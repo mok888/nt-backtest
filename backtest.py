@@ -176,7 +176,14 @@ class RSIBacktester:
 
         # Create backtest engine
         self.engine = BacktestEngine(config=engine_config)
-        self.engine.add_venue(venue=venue_config)
+        self.engine.add_venue(
+            "BINANCE",
+            OmsType.NETTING,
+            AccountType.MARGIN,
+            USDT,
+            [Money(100000.0, USDT)],
+            BookType.L2_MBP,
+        )
         self.engine.add_instrument(self.instrument)
 
         # Create bar type
