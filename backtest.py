@@ -181,7 +181,6 @@ class RSIBacktester:
         # Create backtest engine config
         engine_config = BacktestEngineConfig(
             trader_id="BACKTESTER-001",
-            log_level="INFO",
         )
 
         # Create venue config
