@@ -63,8 +63,8 @@ class BinanceDataLoader:
             lot_size=Quantity.from_str("0.001"),
             max_quantity=Quantity.from_str("1000000"),
             min_quantity=Quantity.from_str("0.001"),
-            max_notional=Money.from_str("10000000", USDT),
-            min_notional=Money.from_str("5.0", USDT),
+            max_notional=Money(Decimal("10000000"), USDT),
+            min_notional=Money(Decimal("5"), USDT),
             max_price=Price.from_str("1000000"),
             min_price=Price.from_str("0.001"),
             margin_init=Decimal("0.05"),  # 20x leverage
