@@ -176,7 +176,8 @@ class RSIBacktester:
 
         # Create backtest engine
         self.engine = BacktestEngine(config=engine_config)
-        self.engine.add_venue(venue=venue_config, instrument=self.instrument)
+        self.engine.add_venue(venue=venue_config)
+        self.engine.add_instrument(self.instrument)
 
         # Create bar type
         bar_type = self._create_bar_type()
