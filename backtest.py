@@ -108,7 +108,6 @@ class RSIBacktester:
             base_currency=USDT,
             starting_balances=[Money(100000.0, USDT)],  # 100K USDT starting capital
             book_type=BookType.L2_MBP,
-            leverage=Decimal("20.0"),  # 20x leverage for perps
         )
 
     def _create_bar_type(self) -> BarType:
