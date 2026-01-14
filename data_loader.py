@@ -4,19 +4,22 @@ Downloads 100 days of 15-minute bars and stores them in Parquet catalog
 """
 
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
-from nautilus_trader.adapters.binance.factories import BinanceDataClientFactory
-from nautilus_trader.adapters.binance.providers import BinanceInstrumentProvider
+from decimal import Decimal
+
 from nautilus_trader.core.datetime import dt_to_unix_nanos
 from nautilus_trader.model.currencies import USDT
-from nautilus_trader.model.data import BarType
-from nautilus_trader.model.enums import BarAggregation, PriceType
-from nautilus_trader.model.identifiers import InstrumentId, Symbol
-from nautilus_trader.model.instruments import Instrument
+from nautilus_trader.model.data import Bar, BarType, BarSpecification
+from nautilus_trader.model.enums import (
+    BarAggregation,
+    PriceType,
+)
+from nautilus_trader.model.identifiers import InstrumentId, Symbol, Venue
+from nautilus_trader.model.instruments import CryptoPerpetual
+from nautilus_trader.model.objects import Price, Quantity
 from nautilus_trader.persistence.catalog import ParquetDataCatalog
-from nautilus_trader.persistence.catalog.core import clean_data_path
-from nautilus_trader.test_kit.providers import TestInstrumentProvider
 
 
 class BinanceDataLoader:
@@ -36,26 +39,20 @@ class BinanceDataLoader:
         self.catalog = ParquetDataCatalog(str(self.catalog_path))
 
         # Binance ETHUSDT Perpetual Futures instrument
-        self.instrument_id = InstrumentId(symbol=Symbol("ETHUSDT.P"), venue="BINANCE")
+        self.instrument_id = InstrumentId(symbol=Symbol("ETHUSDT.P"), venue=Venue("BINANCE"))
         self.instrument = self._create_instrument()
 
-    def _create_instrument(self) -> Instrument:
+    def _create_instrument(self) -> CryptoPerpetual:
         """
-        Create or fetch the ETHUSDT perpetual futures instrument
+        Create the ETHUSDT perpetual futures instrument
 
         Returns:
-            Instrument: The futures instrument configuration
+            CryptoPerpetual: The futures instrument configuration
         """
-        # Create instrument similar to Binance perpetual futures
-        from nautilus_trader.model.identifiers import Venue
-        from nautilus_trader.model.instruments import CryptoPerpetual
-        from nautilus_trader.model.objects import Price, Quantity
-        from decimal import Decimal
-
         instrument = CryptoPerpetual(
             instrument_id=self.instrument_id,
             raw_symbol=Symbol("ETHUSDT"),
-            base_currency=None,  # Will be set automatically
+            base_currency=None,
             quote_currency=USDT,
             settlement_currency=USDT,
             is_inverse=False,
@@ -162,8 +159,6 @@ class BinanceDataLoader:
         Returns:
             DataFrame: Synthetic OHLCV bars
         """
-        import numpy as np
-
         print(f"Generating {days} days of synthetic {timeframe} bars...")
 
         # Calculate number of bars
@@ -185,7 +180,7 @@ class BinanceDataLoader:
         returns = np.random.normal(0.0005, 0.01, n_bars)  # Small upward drift with volatility
         prices = base_price * np.cumprod(1 + returns)
 
-        # Create OHLCV from close prices
+        # Create OHLCV from close prices with some noise
         df = pd.DataFrame(index=pd.date_range(
             start=datetime.now() - timedelta(days=days),
             periods=n_bars,
@@ -230,9 +225,6 @@ class BinanceDataLoader:
         )
 
         # Convert DataFrame to NautilusTrader format
-        from nautilus_trader.model.data import Bar
-        from decimal import Decimal
-
         bars = []
         for timestamp, row in df.iterrows():
             bar = Bar(
