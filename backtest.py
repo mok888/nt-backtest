@@ -177,7 +177,7 @@ class RSIBacktester:
         # Create backtest engine
         self.engine = BacktestEngine(config=engine_config)
         self.engine.add_venue(
-            "BINANCE",
+            Venue("BINANCE"),
             OmsType.NETTING,
             AccountType.MARGIN,
             USDT,
