@@ -10,7 +10,7 @@ from pathlib import Path
 from decimal import Decimal
 
 from nautilus_trader.core.datetime import dt_to_unix_nanos
-from nautilus_trader.model.currencies import USDT
+from nautilus_trader.model.currencies import ETH, USDT
 from nautilus_trader.model.data import Bar, BarType, BarSpecification
 from nautilus_trader.model.enums import (
     BarAggregation,
@@ -52,7 +52,7 @@ class BinanceDataLoader:
         instrument = CryptoPerpetual(
             instrument_id=self.instrument_id,
             raw_symbol=Symbol("ETHUSDT"),
-            base_currency=None,
+            base_currency=ETH,
             quote_currency=USDT,
             settlement_currency=USDT,
             is_inverse=False,
