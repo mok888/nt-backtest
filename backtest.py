@@ -9,8 +9,6 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 from nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig
-from nautilus_trader.backtest.models import FillModel, FeeModel
-from nautilus_trader.backtest.modules import FXRolloverInterestModule
 from nautilus_trader.config import BacktestVenueConfig, BacktestDataConfig, BacktestRunConfig
 from nautilus_trader.core.datetime import dt_to_unix_nanos
 from nautilus_trader.model.currencies import ETH, USDT
@@ -110,14 +108,6 @@ class RSIBacktester:
             base_currency=USDT,
             starting_balances=[Money(100000.0, USDT)],  # 100K USDT starting capital
             book_type=BookType.L2_MBP,
-            fill_model=FillModel(
-                slippage_bps=Decimal("0.5"),  # 0.5 bps slippage
-                probabilistic=True,
-            ),
-            fee_model=FeeModel(
-                maker_fee=Decimal("0.0002"),  # 0.02%
-                taker_fee=Decimal("0.0005"),  # 0.05%
-            ),
             leverage=Decimal("20.0"),  # 20x leverage for perps
         )
 
