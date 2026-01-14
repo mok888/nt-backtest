@@ -13,7 +13,7 @@ from nautilus_trader.backtest.models import FillModel, FeeModel, LatencyModel
 from nautilus_trader.backtest.modules import FXRolloverInterestModule
 from nautilus_trader.config import BacktestVenueConfig, BacktestDataConfig, BacktestRunConfig
 from nautilus_trader.core.datetime import dt_to_unix_nanos
-from nautilus_trader.model.currencies import USDT
+from nautilus_trader.model.currencies import ETH, USDT
 from nautilus_trader.model.data import Bar, BarType
 from nautilus_trader.model.enums import (
     BarAggregation,
@@ -72,7 +72,7 @@ class RSIBacktester:
         instrument = CryptoPerpetual(
             instrument_id=self.instrument_id,
             raw_symbol=Symbol("ETHUSDT"),
-            base_currency=None,
+            base_currency=ETH,
             quote_currency=USDT,
             settlement_currency=USDT,
             is_inverse=False,
@@ -83,8 +83,8 @@ class RSIBacktester:
             lot_size=Quantity.from_str("0.001"),
             max_quantity=Quantity.from_str("1000000"),
             min_quantity=Quantity.from_str("0.001"),
-            max_notional=Price.from_str("10000000"),
-            min_notional=Price.from_str("5.0"),
+            max_notional=Money(Decimal("10000000"), USDT),
+            min_notional=Money(Decimal("5"), USDT),
             max_price=Price.from_str("1000000"),
             min_price=Price.from_str("0.001"),
             margin_init=Decimal("0.05"),  # 20x leverage
