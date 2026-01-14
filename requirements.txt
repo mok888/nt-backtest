@@ -1,0 +1,25 @@
+# NautilusTrader RSI Strategy - Dependencies
+# Python 3.12+ required
+
+# Core NautilusTrader (install with: uv pip install nautilus_trader)
+# nautilus_trader
+
+# Data handling
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Plotting
+matplotlib>=3.7.0
+
+# Optional: Binance API for live data fetching
+ccxt>=4.0.0
+
+# For development
+ipython>=8.10.0
+jupyter>=1.0.0
+
+# For better CSV handling (optional)
+pyarrow>=14.0.0
+
+# Additional utilities
+tqdm>=4.65.0
