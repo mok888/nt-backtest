@@ -346,7 +346,7 @@ class RSIStrategy(Strategy):
         self.log.debug(f"Position changed: {event}")
 
 
-class RSIConfig:
+class RSIConfig(StrategyConfig):
     """
     Configuration for RSI Strategy
     """
