@@ -50,7 +50,7 @@ class RSIOptimizer:
             output_dir=str(self.output_dir),
         )
 
-    def define_search_space(self) -> Dict[str, List]:
+    def define_search_space(self) -> Dict[str, List[float]]:
         """
         Define parameter search space
 
@@ -100,7 +100,7 @@ class RSIOptimizer:
     def run_grid_search(
         self,
         days: int = 100,
-        filters: Dict[str, Any] = None,
+        filters: Optional[Dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
         Run grid search optimization
@@ -212,8 +212,12 @@ class RSIOptimizer:
             filename: Output filename
         """
         output_path = self.output_dir / filename
-        df.to_csv(output_path, index=False)
-        print(f"\nResults saved to {output_path}")
+        try:
+            df.to_csv(output_path, index=False)
+            print(f"\nResults saved to {output_path}")
+        except Exception as e:
+            print(f"Error saving results to CSV: {e}")
+            raise
 
     def print_top_results(
         self,
@@ -366,7 +370,7 @@ class RSIOptimizer:
         return "\n".join(report)
 
 
-def main():
+def main() -> None:
     """Run grid search optimization"""
     optimizer = RSIOptimizer(
         catalog_path="./data/catalog",
@@ -398,9 +402,13 @@ def main():
 
     # Save report
     report_path = Path("./results/summary_report.txt")
-    with open(report_path, 'w') as f:
-        f.write(report)
-    print(f"\nSummary report saved to {report_path}")
+    try:
+        with open(report_path, 'w') as f:
+            f.write(report)
+        print(f"\nSummary report saved to {report_path}")
+    except Exception as e:
+        print(f"Error saving summary report: {e}")
+        raise
 
 
 if __name__ == "__main__":

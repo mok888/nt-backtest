@@ -6,7 +6,7 @@ Runs the RSI strategy on historical data with proper venue configuration
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, TypedDict
 
 from nautilus_trader.backtest.engine import BacktestEngine, BacktestEngineConfig
 from nautilus_trader.config import BacktestVenueConfig, BacktestDataConfig, BacktestRunConfig
@@ -27,6 +27,29 @@ from decimal import Decimal
 
 from strategy import RSIStrategy, RSIConfig
 from data_loader import BinanceDataLoader
+
+
+class BacktestResults(TypedDict):
+    """TypedDict for backtest results with all possible fields"""
+    # Strategy parameters
+    rsi_period: int
+    oversold_threshold: float
+    overbought_threshold: float
+    stop_loss_pct: float
+    take_profit_pct: float
+    position_size_pct: int
+
+    # Performance metrics (may be None if backtest fails)
+    total_pnl: Optional[float]
+    total_return_pct: Optional[float]
+    starting_balance: Optional[float]
+    ending_balance: Optional[float]
+    total_trades: Optional[int]
+    winning_trades: Optional[int]
+    losing_trades: Optional[int]
+    win_rate: Optional[float]
+    sharpe_ratio: Optional[float]
+    max_drawdown_pct: Optional[float]
 
 
 class RSIBacktester:
@@ -137,7 +160,7 @@ class RSIBacktester:
         take_profit_pct: float = 3.0,
         position_size_pct: float = 2.0,
         days: int = 100,
-    ) -> Dict[str, Any]:
+    ) -> BacktestResults:
         """
         Run a single backtest with given parameters
 
@@ -259,7 +282,7 @@ class RSIBacktester:
         stop_loss_pct: float,
         take_profit_pct: float,
         position_size_pct: float,
-    ) -> Dict[str, Any]:
+    ) -> BacktestResults:
         """
         Extract backtest results from engine
 
@@ -318,7 +341,7 @@ class RSIBacktester:
 
         return results
 
-    def print_results(self, results: Dict[str, Any]) -> None:
+    def print_results(self, results: BacktestResults) -> None:
         """
         Print backtest results in a formatted table
 
@@ -342,7 +365,7 @@ class RSIBacktester:
         print(f"  Sharpe Ratio: {results.get('sharpe_ratio', 0):.2f}")
         print(f"{'='*60}\n")
 
-    def save_results(self, results: Dict[str, Any], filename: str = "backtest_results.csv") -> None:
+    def save_results(self, results: BacktestResults, filename: str = "backtest_results.csv") -> None:
         """
         Save results to CSV
 
@@ -352,10 +375,14 @@ class RSIBacktester:
         """
         df = pd.DataFrame([results])
         output_path = self.output_dir / filename
-        df.to_csv(output_path, index=False)
-        print(f"Results saved to {output_path}")
+        try:
+            df.to_csv(output_path, index=False)
+            print(f"Results saved to {output_path}")
+        except Exception as e:
+            self.log.error(f"Error saving results to CSV: {e}")
+            raise
 
-    def plot_equity_curve(self, results: Dict[str, Any]) -> None:
+    def plot_equity_curve(self, results: BacktestResults) -> None:
         """
         Plot equity curve (placeholder - requires full equity data)
 
@@ -381,7 +408,7 @@ class RSIBacktester:
         plt.close()
 
 
-def main():
+def main() -> None:
     """Run a single backtest example"""
     backtester = RSIBacktester(
         catalog_path="./data/catalog",

@@ -147,26 +147,16 @@ class RSIStrategy(Strategy):
         if not self.rsi.initialized:
             return
 
-        last_price = self.rsi.value  # This won't work - we need actual price
-        # We'll get price from portfolio or last bar in real implementation
-
-        # Calculate position size based on account equity
-        account = self.portfolio.account(self.instrument_id.venue)
-        if not account:
-            self.log.warning("No account available for position sizing")
+        # Calculate position size
+        position_size = self._calculate_position_size()
+        if position_size is None:
             return
 
-        free_balance = float(account.balance_free(self.instrument_id.venue))
-        position_size_usdt = free_balance * (self.config.position_size_pct / 100)
-
-        # Get current price from portfolio or use last known price
+        # Get current price for logging
         current_price = self._get_current_price()
         if current_price is None:
-            self.log.warning("Cannot determine current price for position sizing")
+            self.log.warning("Cannot determine current price for logging")
             return
-
-        # Calculate position size in base currency (ETH)
-        position_size = position_size_usdt / current_price
 
         # Submit market order for long entry
         self.submit_order(
@@ -186,23 +176,16 @@ class RSIStrategy(Strategy):
         """
         Open a short position with SL/TP
         """
-        # Get account information
-        account = self.portfolio.account(self.instrument_id.venue)
-        if not account:
-            self.log.warning("No account available for position sizing")
+        # Calculate position size
+        position_size = self._calculate_position_size()
+        if position_size is None:
             return
 
-        free_balance = float(account.balance_free(self.instrument_id.venue))
-        position_size_usdt = free_balance * (self.config.position_size_pct / 100)
-
-        # Get current price
+        # Get current price for logging
         current_price = self._get_current_price()
         if current_price is None:
-            self.log.warning("Cannot determine current price for position sizing")
+            self.log.warning("Cannot determine current price for logging")
             return
-
-        # Calculate position size in base currency (ETH)
-        position_size = position_size_usdt / current_price
 
         # Submit market order for short entry
         self.submit_order(
@@ -230,7 +213,8 @@ class RSIStrategy(Strategy):
         try:
             venue = self.instrument_id.venue
             return float(self.portfolio.last_price(self.instrument_id))
-        except:
+        except (AttributeError, KeyError, ValueError):
+            self.log.debug(f"Could not get current price: portfolio unavailable or no price data")
             return None
 
     def on_position_opened(self, event: PositionOpened) -> None:
@@ -252,6 +236,28 @@ class RSIStrategy(Strategy):
 
         # Attach SL and TP orders
         self._attach_sl_tp_orders(position)
+
+    def _calculate_position_size(self) -> Optional[float]:
+        """
+        Calculate position size based on account equity and config
+
+        Returns:
+            Position size in base currency (ETH) or None if calculation fails
+        """
+        account = self.portfolio.account(self.instrument_id.venue)
+        if not account:
+            self.log.warning("No account available for position sizing")
+            return None
+
+        free_balance = float(account.balance_free(self.instrument_id.venue))
+        position_size_usdt = free_balance * (self.config.position_size_pct / 100)
+
+        current_price = self._get_current_price()
+        if current_price is None:
+            self.log.warning("Cannot determine current price for position sizing")
+            return None
+
+        return position_size_usdt / current_price
 
     def _attach_sl_tp_orders(self, position: Position) -> None:
         """

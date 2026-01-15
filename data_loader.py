@@ -241,8 +241,12 @@ class BinanceDataLoader:
 
         # Write to catalog
         print(f"Saving {len(bars)} bars to catalog...")
-        self.catalog.write_data(bars)
-        print(f"Data saved to {self.catalog_path}")
+        try:
+            self.catalog.write_data(bars)
+            print(f"Data saved to {self.catalog_path}")
+        except Exception as e:
+            print(f"Error saving to catalog: {e}")
+            raise
 
     def load_from_catalog(self) -> pd.DataFrame:
         """
@@ -303,22 +307,51 @@ class BinanceDataLoader:
         if force_download or not self._catalog_exists():
             print("Downloading fresh data from Binance...")
             df = self.download_historical_data(days=days)
+            # Clear existing catalog data to prevent overlapping intervals
+            self._clear_catalog()
             self.save_to_catalog(df)
             return df
         else:
             print("Loading data from existing catalog...")
             return self.load_from_catalog()
 
+    def _clear_catalog(self) -> None:
+        """
+        Clear existing catalog data for this instrument to prevent overlapping intervals
+        """
+        try:
+            from nautilus_trader.model.data import Bar
+            self.catalog.delete_data_range(
+                Bar,
+                self.instrument_id,
+                start=None,
+                end=None,
+            )
+            print("Cleared existing catalog data")
+        except Exception as e:
+            print(f"Warning: Could not clear catalog: {e}")
+            # If clearing fails, try to recreate catalog
+            try:
+                import shutil
+                catalog_path = str(self.catalog_path)
+                if Path(catalog_path).exists():
+                    shutil.rmtree(catalog_path)
+                    Path(catalog_path).mkdir(parents=True, exist_ok=True)
+                    self.catalog = ParquetDataCatalog(str(self.catalog_path))
+                    print("Recreated catalog directory")
+            except Exception as e2:
+                print(f"Warning: Could not recreate catalog: {e2}")
+
     def _catalog_exists(self) -> bool:
         """Check if catalog has data"""
         try:
             bars = self.catalog.bars(instrument_ids=[self.instrument_id], limit=1)
             return len(bars) > 0
-        except:
+        except (FileNotFoundError, KeyError, AttributeError):
             return False
 
 
-def main():
+def main() -> None:
     """Example usage"""
     loader = BinanceDataLoader(catalog_path="./data/catalog")
 
@@ -333,8 +366,12 @@ def main():
     print(df.tail())
 
     # Save to CSV for analysis
-    df.to_csv("./data/ethusdt_15m.csv")
-    print(f"\nData saved to ./data/ethusdt_15m.csv")
+    try:
+        df.to_csv("./data/ethusdt_15m.csv")
+        print(f"\nData saved to ./data/ethusdt_15m.csv")
+    except Exception as e:
+        print(f"Error saving CSV: {e}")
+        raise
 
 
 if __name__ == "__main__":
