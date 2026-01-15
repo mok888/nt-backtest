@@ -203,8 +203,8 @@ class RSIBacktester:
             Venue("BINANCE"),
             OmsType.NETTING,
             AccountType.MARGIN,
-            USDT,
-            [Money(100000.0, USDT)],
+            [Money(100000.0, USDT)],  # starting_balances
+            USDT,                     # base_currency
             BookType.L2_MBP,
         )
         self.engine.add_instrument(self.instrument)
