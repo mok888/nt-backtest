@@ -214,6 +214,21 @@ class BinanceDataLoader:
         Args:
             df: DataFrame with OHLCV data
         """
+        import shutil
+
+        # Ensure DataFrame has datetime index
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = pd.to_datetime(df.index)
+
+        # Sort DataFrame by index to ensure monotonic increasing timestamps
+        df = df.sort_index()
+
+        # Remove any duplicate timestamps (keep last occurrence)
+        duplicate_count = df.index.duplicated().sum()
+        if duplicate_count > 0:
+            print(f"Warning: Found {duplicate_count} duplicate timestamps, removing...")
+            df = df[~df.index.duplicated(keep='last')]
+
         # Create bar type
         bar_type = BarType(
             instrument_id=self.instrument_id,
@@ -238,6 +253,17 @@ class BinanceDataLoader:
                 ts_init=dt_to_unix_nanos(timestamp),
             )
             bars.append(bar)
+
+        # Delete and recreate catalog directory to prevent overlapping intervals
+        catalog_path = str(self.catalog_path)
+        if Path(catalog_path).exists():
+            print(f"Deleting catalog directory: {catalog_path}")
+            shutil.rmtree(catalog_path)
+
+        # Reinitialize catalog
+        Path(catalog_path).mkdir(parents=True, exist_ok=True)
+        self.catalog = ParquetDataCatalog(str(self.catalog_path))
+        print(f"Created new catalog at: {catalog_path}")
 
         # Write to catalog
         print(f"Saving {len(bars)} bars to catalog...")
@@ -307,8 +333,6 @@ class BinanceDataLoader:
         if force_download or not self._catalog_exists():
             print("Downloading fresh data from Binance...")
             df = self.download_historical_data(days=days)
-            # Clear existing catalog data to prevent overlapping intervals
-            self._clear_catalog()
             self.save_to_catalog(df)
             return df
         else:
